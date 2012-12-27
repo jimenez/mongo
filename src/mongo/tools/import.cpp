@@ -267,19 +267,20 @@ public:
     Import() : Tool( "import" ) {
         addFieldOptions();
         add_options()
-        ("ignoreBlanks","if given, empty fields in csv and tsv will be ignored")
-        ("type",po::value<string>() , "type of file to import.  default: json (json,csv,tsv)")
-        ("file",po::value<string>() , "file to import from; if not specified stdin is used" )
-        ("drop", "drop collection first " )
-        ("headerline","first line in input file is a header (CSV and TSV only)")
-        ("upsert", "insert or update objects that already exist" )
-        ("upsertFields", po::value<string>(), "comma-separated fields for the query part of the upsert. You should make sure this is indexed" )
-        ("stopOnError", "stop importing at first error rather than continuing" )
-        ("jsonArray", "load a json array, not one item per line. Currently limited to 16MB." )
-        ;
+	  ("ignoreBlanks","if given, empty fields in csv and tsv will be ignored")
+	  ("type",po::value<string>() , "type of file to import.  default: json (json,csv,tsv)")
+	  ("s",po::value<string>(), "separator.  defaults: csv :',', tsv:'\t'")
+	  ("file",po::value<string>() , "file to import from; if not specified stdin is used" )
+	  ("drop", "drop collection first " )
+	  ("headerline","first line in input file is a header (CSV and TSV only)")
+	  ("upsert", "insert or update objects that already exist" )
+	  ("upsertFields", po::value<string>(), "comma-separated fields for the query part of the upsert. You should make sure this is indexed" )
+	  ("stopOnError", "stop importing at first error rather than continuing" )
+	  ("jsonArray", "load a json array, not one item per line. Currently limited to 16MB." )
+	  ;
         add_hidden_options()
-        ("noimport", "don't actually import. useful for benchmarking parser" )
-        ;
+	  ("noimport", "don't actually import. useful for benchmarking parser" )
+	  ;
         addPositionArg( "file" , 1 );
         _type = JSON;
         _ignoreBlanks = false;
@@ -288,7 +289,7 @@ public:
         _doimport = true;
         _jsonArray = false;
     }
-    ;
+  ;
     virtual void printExtraHelp( ostream & out ) {
         out << "Import CSV, TSV or JSON data into MongoDB.\n" << endl;
         out << "When importing JSON documents, each document must be a separate line of the input file.\n";
@@ -380,22 +381,23 @@ public:
 
         if ( hasParam( "type" ) ) {
             string type = getParam( "type" );
+	    bool sep = hasParam("s");
             if ( type == "json" )
-                _type = JSON;
-            else if ( type == "csv" ) {
-                _type = CSV;
-                _sep = ",";
+	      _type = JSON;
+	    else if ( type == "csv" ) {
+	      _type = CSV;
+	      _sep = sep ? getParam("s").c_str() : ",";
             }
             else if ( type == "tsv" ) {
-                _type = TSV;
-                _sep = "\t";
+	      _type = TSV;
+	      _sep = sep ? getParam("s").c_str() : "\t";
             }
             else {
-                error() << "don't know what type [" << type << "] is" << endl;
-                return -1;
+	      error() << "don't know what type [" << type << "] is" << endl;
+	      return -1;
             }
         }
-
+	
         if ( _type == CSV || _type == TSV ) {
             _headerLine = hasParam( "headerline" );
             if ( _headerLine ) {

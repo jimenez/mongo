@@ -39,13 +39,15 @@ public:
     Export() : Tool( "export" ) {
         addFieldOptions();
         add_options()
-        ("query,q" , po::value<string>() , "query filter, as a JSON string" )
-        ("csv","export to csv instead of json")
-        ("out,o", po::value<string>(), "output file; if not specified, stdout is used")
-        ("jsonArray", "output to a json array rather than one object per line")
-        ("slaveOk,k", po::value<bool>()->default_value(true) , "use secondaries for export if available, default true")
-        ("forceTableScan", "force a table scan (do not use $snapshot)" )
-        ;
+	  ("query,q" , po::value<string>() , "query filter, as a JSON string" )
+	  ("csv","export to csv instead of json")
+	  ("out,o", po::value<string>(), "output file; if not specified, stdout is used")
+	  ("s", po::value<string>()->default_value(","),"explicit csv separator/delimitator option")
+	  ("jsonArray", "output to a json array rather than one object per line")
+	  ("slaveOk,k", po::value<bool>()->default_value(true) , "use secondaries for export if available, default true")
+	  ("forceTableScan", "force a table scan (do not use $snapshot)" )
+
+	  ;
         _usesstdout = false;
     }
 
@@ -203,12 +205,14 @@ public:
         auto_ptr<DBClientCursor> cursor = conn().query( ns.c_str() , q , 0 , 0 , fieldsToReturn , ( slaveOk ? QueryOption_SlaveOk : 0 ) | QueryOption_NoCursorTimeout );
 
         if ( csv ) {
-            for ( vector<string>::iterator i=_fields.begin(); i != _fields.end(); i++ ) {
-                if ( i != _fields.begin() )
-                    out << ",";
-                out << *i;
-            }
-            out << endl;
+	  for ( vector<string>::iterator i=_fields.begin(); i != _fields.end(); i++ ) {
+	    if ( i != _fields.begin() ){
+	      string sep = getParam("s");
+	      out << sep;
+	    }
+	    out << *i;
+	  }
+	  out << endl;
         }
 
         if (jsonArray)
@@ -220,12 +224,14 @@ public:
             BSONObj obj = cursor->next();
             if ( csv ) {
                 for ( vector<string>::iterator i=_fields.begin(); i != _fields.end(); i++ ) {
-                    if ( i != _fields.begin() )
-                        out << ",";
-                    const BSONElement & e = obj.getFieldDotted(i->c_str());
-                    if ( ! e.eoo() ) {
-                        out << csvString(e);
-                    }
+		  if ( i != _fields.begin() ){
+		    string sep = getParam("s");
+		    out << sep;
+		  }
+		  const BSONElement & e = obj.getFieldDotted(i->c_str());
+		  if ( ! e.eoo() ) {
+		    out << csvString(e);
+		  }
                 }
                 out << endl;
             }
